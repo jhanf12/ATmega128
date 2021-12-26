@@ -1,0 +1,55 @@
+
+//PE4번을 버튼스위치를 누르면 LED가 맨아래에서 하나씩 올라가며 5번은 1씩 감소
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
+int led_cnt;
+
+char LED[9] = {0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+
+ISR(INT4_vect)
+{
+	if(++led_cnt > 8) led_cnt = 8;
+//	PORTB ^= 0x01; //0b 0000 0001, 0번 LED
+}
+
+ISR(INT5_vect)
+{
+	if(--led_cnt < 0) led_cnt = 0;
+//	PORTB ^= 0x04; //0b 0000 0100, 2번 LED
+}
+
+ISR(INT6_vect)
+{
+	led_cnt = 0;
+//	PORTB ^= 0x40; //0b 0100 0000, 6번 LED
+}
+
+void Init_IOport(void)
+{
+	DDRB = 0xFF;
+	PORTB = 0xFF;
+}
+
+void Init_Interrupt(void)
+{
+	EICRB = 0x2A;  // 0b 0010 1010, INT4 하강, INT5 하강, INT6 하강
+	EIMSK = 0x70;  // 0b 0111 0000, INT4, INT5, INT6
+	
+	SREG = 0x80;
+}
+
+int main(void)
+{
+    /* Replace with your application code */
+	
+	Init_IOport();
+	
+	Init_Interrupt();
+	
+    while (1) 
+    {
+		PORTB = ~LED[led_cnt];
+    }
+}
