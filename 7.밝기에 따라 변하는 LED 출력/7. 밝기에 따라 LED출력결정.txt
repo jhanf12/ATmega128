@@ -1,0 +1,112 @@
+
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
+#define CLR          0
+#define SET          1
+
+#define T_START      184
+#define INTERVAL     20
+
+#define AD_CHECK     0x10
+#define AD_CH0       0x00
+#define AD_CH1       0x01
+
+/* 변수 정의 */
+int  digit;
+int  Data, Data_1000, Data_100, Data_10, Data_1;
+int  tmr_cnt;
+char tmr_flag;
+
+const char LED_TABLE[8] = {0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE, 0xFF};
+
+const char FND_TABLE[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x27, 0x7F, 0x67};
+// FND NUMBER table            0,    1,    2,    3,    4,    5,    6,    7,    8,    9
+
+// TIMER0 OVERFLOW 인터럽트 루틴
+ISR(TIMER0_OVF_vect)
+{
+	TCNT0 = T_START;
+	if(++tmr_cnt == INTERVAL){
+		tmr_cnt = 0;
+		tmr_flag = SET;
+	}
+	
+	if(digit == 0){
+		PORTD &= 0x0F;
+		PORTC = ~FND_TABLE[Data_1000];
+		PORTD |= 0x10;
+	}
+	else if(digit == 1){
+		PORTD &= 0x0F;
+		PORTC = ~FND_TABLE[Data_100];
+		PORTD |= 0x20;
+	}
+	else if(digit == 2){
+		PORTD &= 0x0F;
+		PORTC = ~FND_TABLE[Data_10];
+		PORTD |= 0x40;
+	}
+	else if(digit == 3){
+		PORTD &= 0x0F;
+		PORTC = ~FND_TABLE[Data_1];
+		PORTD |= 0x80;
+	}
+	
+	if(++digit > 3) digit = 0;
+}
+
+void Init_IOport(void)
+{
+	DDRB = 0xFF;
+	PORTB = 0xFF;
+	
+	DDRC = 0xFF;
+	PORTC = 0xFF;
+	
+	DDRD = 0xFF;
+	PORTD = 0x0F;
+}
+
+void Init_Interrupt(void)
+{
+	TCCR0 = 0x07;        // Normal timer, clk / 1024 분주비 설정
+	TIMSK = 0x01;        // Timer0 Overflow Interrupt 설정
+	TCNT0 = T_START;     // Timer0 초기값 설정
+	SREG = 0x80;         // Enable Global Interrupt
+}
+
+int main(void)
+{
+	/* Replace with your application code */
+	int level;
+	
+	Init_IOport();
+	Init_Interrupt();
+//	ADMUX = AD_CH0;      // Set A/D channel 0
+	ADMUX = AD_CH1;      // Set A/D channel 1, CDS
+	ADCSRA = 0x87;       // A/D operation ON
+
+	while (1)
+	{
+		ADCSRA = 0xC7;   // A/D Conversion Start
+		while((ADCSRA & AD_CHECK) != AD_CHECK);
+		Data = ADC;
+
+		if(tmr_flag == SET){
+			tmr_flag = CLR;
+			
+			Data_1000 =   Data / 1000;
+			Data_100  =  (Data % 1000) / 100;
+			Data_10   = ((Data % 1000) % 100) / 10;
+			Data_1    = ((Data % 1000) % 100) % 10;
+			
+			level = (Data-320) * 7 / (730 - 320);
+			if(level < 0) level = 0;
+			if(level > 7) level = 7;
+			
+			PORTB = ~LED_TABLE[level];
+		}
+	}
+}
