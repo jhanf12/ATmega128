@@ -1,0 +1,30 @@
+#include <avr/io.h>
+
+void Delay(int idata)
+{
+	int i,j;
+
+	for(i=0;i<idata;i++){
+		for(j=0;j<30000;j++){
+		}
+	}
+}
+
+void Init_IOport(void)
+{
+	DDRB=0xff;
+	PORTB=0xff;
+}
+
+int main(void)
+{
+	Init_IOport();
+    /* Replace with your application code */
+    while (1) 
+    {
+		PORTB = 0x00;
+		Delay(10);
+		PORTB=0xff;
+		Delay(10);
+    }
+}
