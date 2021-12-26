@@ -1,0 +1,74 @@
+
+#include <avr/io.h>
+
+int data;
+char dig_table[4] = {0x10, 0x20, 0x40, 0x80};
+//					 DIG1, DIG2, DIG3, DIG4
+char fnd_table[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x27, 0x7F, 0x6F};
+					//  0,	  1,   2,     3,    4,   5,   6,    7,    8,     9
+
+void Delay(int idata){
+	int i,j;
+	
+	for(i=0;i<idata; i++){
+		for(j=0;j<5000;j++);
+	}
+	}
+
+
+void Init_IOport(void){
+	DDRC=0xFF;
+	PORTC=0xFF;
+
+	DDRD=0xFF;
+	PORTD=0x0F;
+}
+
+int main(void)
+{
+	Init_IOport();
+    /* Replace with your application code */
+    while (1) 
+    {
+	data=2;  //숫자표현을 위한 변수  근데 짝수는 나옴 홀수는 안나옴
+
+	
+	PORTD = dig_table[0];    //천의자리 DIG1 
+	PORTC= ~fnd_table[1];
+	Delay(1);
+
+	
+	PORTD = dig_table[1];
+	PORTC= ~fnd_table[2];
+	Delay(1);
+
+	PORTD = dig_table[2];
+	PORTC= ~fnd_table[3];
+	Delay(1);
+
+	PORTD = dig_table[3];
+	PORTC= ~fnd_table[4];
+	Delay(1);
+    }
+}
+
+/* PORTD &= ~0xF0;    //천의자리 DIG1
+PORTD |=0x10;
+PORTC= ~fnd_table[1];
+Delay(1);
+
+
+PORTD &= ~0xF0;
+PORTD |=0x20;
+PORTC= ~fnd_table[2];
+Delay(1);
+
+PORTD &= ~0xF0;
+PORTD |=0x40;
+PORTC= ~fnd_table[3];
+Delay(1);
+
+PORTD &= ~0xF0;
+PORTD |=0x80;
+PORTC= ~fnd_table[4];
+Delay(1); */
