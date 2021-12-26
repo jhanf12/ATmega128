@@ -1,0 +1,23 @@
+#include <avr/io.h>
+//버튼PE4,5,6,7을 led불이 하나씩 들어온다
+void Init_IOport(void)
+{
+	DDRB = 0xff;
+	PORTB = 0xff;
+
+	DDRE=0x00;
+}
+
+int main(void)
+{
+    /* Replace with your application code */
+    Init_IOport();
+	while (1) 
+    {
+	if((PINE | ~0x10) == ~0x10) PORTB = ~0x01;
+	if((PINE | ~0x20) == ~0x20) PORTB = ~0x02;
+	if((PINE | ~0x40) == ~0x40) PORTB = ~0x04;
+	if((PINE | ~0x80) == ~0x80) PORTB = ~0x08;
+    }
+}
+
