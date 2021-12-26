@@ -1,0 +1,124 @@
+// 마이크로프로세서 기능 중 통신에 관련한 내용. 통신 내용 중 USART라는 기능을 사용. PC와 마이크로프로세서 간의 통신을 위하여 가상 Serail 통신을 위한 USB 드라이버와 통신 에물레이터를 이용하여 실습.
+
+//실습에 사용된 프로그램은 SerialWorks
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
+#define CLR 0
+#define SET 1
+
+#define T0_START 184  //TMR0 184 count > 5ms
+
+//Define ATmega128 Baud rate at using 14.7456MHz(fix fCLK)
+#define _9600BPS 95
+#define _19200BPS 47
+#define _38400BPS 23
+#define _76800BPS 11
+
+char sec;
+
+int tmr0_cnt;
+char tmr0_flag;
+
+//TIMER0 OVERFLOW 인터럽트 루틴
+ISR(TIMER0_OVF_vect)
+{
+	TCNT0 = T0_START;
+
+	if (++tmr0_cnt >= 200)
+	{
+		tmr0_cnt = 0;
+		tmr0_flag = SET;
+	}
+
+}
+
+//Serial Data 처리 루틴 Part
+void Init_Serial_0(void)
+{
+	char tmp;
+
+	UBRR0H = 0;
+	UBRR0L = _9600BPS;
+	UCSR0A = 0x00;
+	UCSR0B = 0x08;
+	UCSR0C = 0x06;
+
+	tmp = UDR0;
+}
+
+void TX0_char(char data)
+{
+	while((UCSR0A & 0x20) == 0x00);
+	UDR0 = data;
+}
+
+void TX0_string(char *string)
+{
+	while(*string != '\0')    //역슬래시 \인가
+		TX0_char(*string);
+		string++;
+	}
+	while((UCSR0A & 0x20) == 0x00);
+}
+
+void Init_Serial_1(void)
+{
+	char tmp;
+	
+	UBRR1H = 0;
+	UBRR1L = _9600BPS;
+	UCSR1A = 0x00;
+	UCSR1B = 0x08;
+	UCSR1C = 0x06;
+
+	tmp = UDR1;
+}
+
+void TX1_char(char data)
+{
+	whil((UCSR1A & 0x20) == 0x00);
+	UDR1 = data;
+}
+
+void TX1_string(char *string)
+{
+	while(*string != '\0'{
+		TX1_char(*string);
+		string++;
+	}
+}
+//Serial Data 처리 루틴 Part
+
+void Init_Interrupt(void)
+{
+	TCCR0 = 0x07;   // clk/1024 분주비
+	TIMSK = 0x01;  // timer0 overflow 인터럽트
+	TCNT0 = T0_START;  // timer0 초기값설정
+	SREG = 0x80;
+}
+
+int main(void)
+{
+	Init_Serial_0();
+	Init_Serial_1();
+	Init_Interrupt();
+
+	while(1)
+	{
+		if(tmr0_flag == SET)
+		{
+			tmr0_flag = CLR;
+		
+			if(++sec >=60) sec=0;
+		
+			TX1_string("Second is");
+			TX1_char(sec / 10 + '0');
+			TX1_char(sec % 10 + '0');
+			TX1_string("[s]\r\n");
+		}
+	}
+}
+
+}
